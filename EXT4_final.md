@@ -1,4 +1,4 @@
-Kv# Nội Dung
+Kv# Nội Dung abc
 
 - [Khái niệm filesystem](#filesystem)
 - [Khái niệm inode và metadata](#inode-và-metadata)
@@ -14,7 +14,7 @@ Kv# Nội Dung
  Trong Linux, filesystem là hệ thống tổ chức và quản lý dữ liệu trên thiết bị lưu trữ 
 (HDD, SSD, USB, phân vùng...). Nó quy định cách lưu trữ, đặt tên, phân quyền và truy xuất file/thư mục, tức là cung cấp cấu trúc logic để quản lý dữ liệu.
 
-❓ Tại sao phải có file system 
+❓ Tại sao phải có file system
 
 - Nếu không có filesystem: ổ đĩa chỉ là dãy bit 0/1 nối tiếp, không có khái niệm file/thư mục. 
 Muốn đọc lại, phải biết trước offset (vị trí bắt đầu của dữ liệu) và độ dài dữ liệu.
