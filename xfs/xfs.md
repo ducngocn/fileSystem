@@ -1,28 +1,10 @@
 ## Nội dung
-- [So sánh tổng quan ext4 và xfs](#tổng-quan-ext4-và-xfs)
 - [Tổng quan 4 đặc điểm chính:](#4-đặc-điểm-chính-của-xfs)
     - [Allocation group](#allocation-group)
     - [Extent-based allocation](#extent-based-allocation)
     - [Delayed allocation](#delayed-allocation)
     - [Journaling](#journaling)
-
-## Tổng quan ext4 và xfs
-
-- **Ext4** phù hợp với điều kiện limited ram hơn so với xfs vì xfs có nhiều overhead/tác vụ hơn để xử lí nên tiêu tốn ram hơn  
-
-- **Ext4** cũng phù hợp để xử lí file nhỏ hơn vì nó cũng có ít overhead hơn so với xfs dẫn đến xử lí nhanh hơn.
-
-Overhead = các công việc “bổ sung” mà hệ thống phải làm ngoài công việc chính, để đảm bảo mọi thứ hoạt động đúng.
-
-VD: Máy tính: ghi file 1KB lên disk:
-
-Công việc chính = ghi 1KB dữ liệu.
-
-Overhead = cập nhật inode, bitmap, journaling metadata, tra cứu block → không phải dữ liệu, nhưng bắt buộc phải làm.
-
-- **XFS** được tối ưu cho khối lượng dữ liệu lớn, tốc độ truy xuất cao, và tác vụ I/O song song. Nhờ khả năng xử lý nhiều luồng đọc/ghi cùng lúc và hỗ trợ mở rộng quy mô dễ dàng, XFS thường được sử dụng trong các máy chủ lưu trữ lớn, môi trường doanh nghiệp, hoặc các hệ thống có file dung lượng rất lớn.
-
-- **XFS** không mạnh trong việc xử lý nhiều file nhỏ hoặc các tác vụ yêu cầu thao tác nhanh trên số lượng file nhỏ vì chúng xử lí dữ liệu phức tạp với nhiều overhead hơn.
+- [So sánh tổng quan ext4 và xfs](#tổng-quan-ext4-và-xfs)
 
 ## 4 đặc điểm chính của XFS
 
@@ -41,7 +23,7 @@ Overhead = cập nhật inode, bitmap, journaling metadata, tra cứu block → 
 
 - Mỗi AG hoạt động gần như một đơn vị quản lý độc lập, có bảng inode, bảng không gian trống (free space) và metadata riêng, giúp XFS có thể xử lý song song nhiều thao tác đọc/ghi trên cùng một filesystem.
 
-- Nhờ cơ chế này, nhiều tiến trình hoặc luồng có thể truy cập đồng thời mà không gây ***tranh chấp tài nguyên***, từ đó tăng ***khả năng mở rộng*** (scalability) và ***hiệu năng I/O song song***.
+- Nhờ cơ chế này, nhiều tiến trình hoặc luồng có thể truy cập đồng thời mà không gây ***tranh chấp tài nguyên***, từ đó tăng ***hiệu năng I/O song song***.
 
 ***Tranh chấp tài nguyên có thể được hiểu như sau:***
 ```
@@ -58,7 +40,7 @@ Tiến trình B phải chờ A xong mới được truy cập.
 ➡️ Đó chính là tranh chấp tài nguyên — nhiều tiến trình muốn truy cập cùng một cấu trúc quản lý, nên phải chờ nhau, làm giảm tốc độ và khả năng mở rộng.
 ```
 
-***Tăng khả năng mở rộng (scalability) và hiệu năng I/O song song:***
+***Tăng hiệu năng I/O song song:***
 ```
 Khi số lượng tiến trình truy cập filesystem tăng lên, thay vì phải xử lý tuần tự từng tiến trình như ext4 (gây giảm tốc độ), XFS có thể xử lý nhiều tiến trình cùng lúc nhờ cơ chế Allocation Group (AG) hoạt động độc lập.
 
@@ -106,12 +88,6 @@ XFS có thể chia file như sau:
 3. Trong RAM, XFS theo dõi các phần này riêng biệt.
 
 4. Sau khi tất cả AG ghi xong, dữ liệu trên disk đã được lưu liên tục về mặt logic, file hoàn chỉnh được thể hiện trong filesystem.
-
-❓ **Khi nào thì nó ghi song song:**
-
-(chat gpt) khi kích thước file lớn hơn agsize-là số block của một vùng logic, hoặc khi trên các vùng không còn đủ extent chứ nguyên một file.
-
-❓(chatgpt) Nếu trong trường hợp có phân vùng chia ra thành 4 ag chẳng hạn 1,2,3,4 nếu file A này lớn hơn kích thước trống của extent ag1 nhưng lại có thể nằm trong ag2 thì nó sẽ ưu tiên theo extent liên tục tức là ag2.
 
 **Cách xem số lượng AG sau khi format**
 
@@ -195,39 +171,6 @@ Cấp 12KB cho file:
 - Gộp (merge) các extent liền kề nhờ tra cây theo start block.
 
 - Thêm lại extent mới vào cả hai cây để duy trì thông tin free space.
-
-**So sánh với extent EXT4**
-
-- Nhìn chung về khái niệm extent đều là tập hợp của các block liện nhau.
-
--Cơ chế cấp phát extent khác nhau:
-
-**ext4:** 
-
-- Cơ chế cấp phát:  
-EXT4 quản lý vùng trống bằng bitmap.
-Khi cần cấp phát, hệ thống duyệt bitmap tuần tự, gặp đủ số block trống liên tục thì cấp phát ngay.
-Cơ chế này đơn giản, ít overhead, hiệu năng tốt với file vừa và nhỏ. Bởi vì nếu so sánh với xfs, thì ext4 chỉ cần duyệt lần lượt và sau đó là cập nhật inode và bitmap tương ứng, trong khi đó xfs sẽ cập nhật 2 cây B+, metadata của ag, những cập nhật này sẽ tốn ram và cpu hơn(overhead).
-
-- Hạn chế với file lớn:  
-Khi filesystem đã bị chia nhỏ, các vùng trống thường rải rác.
-Nếu cần ghi một file lớn, EXT4 phải duyệt tuần tự qua nhiều block group để tìm vùng trống đủ dài.
-Trong trường hợp không có vùng nào đủ lớn, nó sẽ duyệt gần như hết ổ đĩa thì mới nhận ra không đủ vùng trống trước khi quay lại ghép nhiều extent nhỏ để đủ dung lượng.  
-→ Tác động: tăng thời gian cấp phát, giảm hiệu năng, và dễ gây phân mảnh file.
-
-**xfs:** 
-
-Tra B+ tree theo size để chọn extent tối ưu vừa đủ, liên tục, giảm phân mảnh. Cập nhật cả B+ tree theo block  sau khi cấp phát. Tốt cho file lớn & I/O nhiều luồng.
-
-- XFS quản lý vùng trống bằng hai cây B+ tree thay vì bitmap như EXT4.
-Khi cấp phát, XFS có thể:
-
-    - Tra nhanh theo kích thước để tìm một vùng trống liền đủ lớn.
-
-    - Trong trường hợp mà nó không có extent đủ lớn thì sẽ nhanh chóng phát hiện ra, lúc này xfs sẽ chia file đó vào các ag khác nhau để xử lí.
-
-    - Tuy nhiên, với file nhỏ, do XFS phải thực hiện nhiều thao tác phụ (cập nhật 2 B+ tree, metadata AG, tính toán extent...) nên có nhiều overhead hơn → xử lý chậm hơn EXT4.
-
 
 ## Delayed allocation 
 
@@ -394,7 +337,7 @@ Nếu chưa kịp flush mà crash → khi reboot, kernel sẽ dùng journal đ�
 > journal sẽ nằm trong cùng phân vùng dữ liệu chính của filesystem → gọi là internal log, hoặc trên thiết bị riêng biệt (ổ SSD riêng hoặc một phân vùng khác)  
 > Trong khi đó journal trong ext4 sẽ nằm chung trong  cùng phân vùng chứ không tách riêng.
 
-### Tình huống xảy ra sau khi đã có order journaling
+### Tình huống xảy ra sau khi đã có journaling
 
 
 Ghi "abc" vào file test.txt (file ban đầu trống).
@@ -447,4 +390,18 @@ File xuất hiện đầy đủ "abc".
 File chính xác và an toàn.
 ```
 
- 
+ ## Tổng quan ext4 và xfs
+
+- **Ext4** phù hợp với điều kiện limited ram hơn so với xfs vì xfs có nhiều overhead/tác vụ hơn để xử lí nên tiêu tốn ram hơn  
+
+Overhead = các công việc “bổ sung” mà hệ thống phải làm ngoài công việc chính, để đảm bảo mọi thứ hoạt động đúng.
+
+VD: Máy tính: ghi file 1KB lên disk:
+
+Công việc chính = ghi 1KB dữ liệu.
+
+Overhead = cập nhật inode, bitmap, journaling metadata, tra cứu block → không phải dữ liệu, nhưng bắt buộc phải làm.
+
+- **XFS** được tối ưu cho khối lượng dữ liệu lớn, tốc độ truy xuất cao, và tác vụ I/O song song. Nhờ khả năng xử lý nhiều luồng đọc/ghi cùng lúc và hỗ trợ mở rộng quy mô dễ dàng, XFS thường được sử dụng trong các máy chủ lưu trữ lớn, môi trường doanh nghiệp, hoặc các hệ thống có file dung lượng rất lớn.
+
+- **XFS** không mạnh trong việc xử lý nhiều file nhỏ hoặc các tác vụ yêu cầu thao tác nhanh trên số lượng file nhỏ vì chúng xử lí dữ liệu phức tạp với nhiều overhead hơn.
