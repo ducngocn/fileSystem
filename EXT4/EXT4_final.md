@@ -188,6 +188,15 @@ hello
 ngocduc@linux:~$ cat file1_hardlink.txt
 hello
 ```
+**Hardlink không thể tạo giữa 2 file thuộc 2 phân vùng khác nhau vì giữa chúng có hệ thống inode khác nhau.**
+
+file1 thuộc phân vùng par2  
+file2 thuộc phân vùng par3
+
+```
+ngocduc@linux:~$ ln /mnt/par2/file1 /mnt/par3/file4
+ln: failed to create hard link '/mnt/par3/file4' => '/mnt/par2/file1': Invalid cross-device link
+```   
 
 **Khi nào sử dụng hardlink:**
 
@@ -233,6 +242,18 @@ ngocduc@linux:~$ cat file2.txt
 hello
 hi
 ```
+Tạo liên kết trỏ tới một file nằm trong filesystem khác
+
+file5 nằm trong phân vùng /mnt/par2, link5 nằm trong phân vùng /mnt/par3
+
+```
+ngocduc@linux:~$ ls -li /mnt/par2
+14 -rw-r--r-- 1 root root     0 Oct 24 03:16 file5
+
+ngocduc@linux:~$ ls -li /mnt/par3
+14 lrwxrwxrwx 1 root root    15 Oct 24 03:16 link5 -> /mnt/par2/file5
+```
+
 **Nếu xóa nhầm file gốc thì file symbolic sẽ hỏng**
 
 ```
@@ -243,6 +264,7 @@ total 0
 ngocduc@linux:~$ cat file2_softlink.txt
 cat: file2_softlink.txt: No such file or directory
 ```
+
 
 ⚠️ **Lưu ý:**
 
