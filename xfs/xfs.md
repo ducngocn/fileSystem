@@ -26,28 +26,28 @@
 - Nhờ cơ chế này, nhiều tiến trình hoặc luồng có thể truy cập đồng thời mà không gây ***tranh chấp tài nguyên***, từ đó tăng ***hiệu năng I/O song song***.
 
 ***Tranh chấp tài nguyên có thể được hiểu như sau:***
-```
-Giả sử có hai tiến trình cùng ghi file trên một filesystem ext4.
 
-Tiến trình A ghi file1.
+- Giả sử có hai tiến trình cùng ghi file trên một filesystem ext4.
 
-Tiến trình B ghi file2.
+    - Tiến trình A ghi file1.
 
-Cả hai đều phải xin quyền truy cập vào cùng một bảng free block và bảng inode chung (vì ext4 có một vùng quản lý tập trung).
+    - Tiến trình B ghi file2.
+
+- Cả hai đều phải xin quyền truy cập vào cùng một bảng free block và bảng inode chung (vì ext4 có một vùng quản lý tập trung).
 Khi tiến trình A đang cập nhật, hệ thống sẽ lock (khóa) vùng đó lại tạm thời để đảm bảo không bị ghi chồng.
 Tiến trình B phải chờ A xong mới được truy cập.
 
-➡️ Đó chính là tranh chấp tài nguyên — nhiều tiến trình muốn truy cập cùng một cấu trúc quản lý, nên phải chờ nhau, làm giảm tốc độ và khả năng mở rộng.
-```
+    ➡️ Đó chính là tranh chấp tài nguyên — nhiều tiến trình muốn truy cập cùng một cấu trúc quản lý, nên phải chờ nhau, làm giảm tốc độ và khả năng mở rộng.
+
 
 ***Tăng hiệu năng I/O song song:***
-```
+
 Khi số lượng tiến trình truy cập filesystem tăng lên, thay vì phải xử lý tuần tự từng tiến trình như ext4 (gây giảm tốc độ), XFS có thể xử lý nhiều tiến trình cùng lúc nhờ cơ chế Allocation Group (AG) hoạt động độc lập.
 
 Hiệu năng I/O song song nghĩa là hệ thống có thể thực hiện nhiều thao tác đọc/ghi đồng thời mà không bị chậm lại, vì mỗi AG có thể quản lý và xử lý I/O riêng biệt, giúp tận dụng tối đa tài nguyên CPU và ổ đĩa.
-```
 
-- Các file và thư mục trong XFS có thể trải dài qua nhiều AG khác nhau, nghĩa là dữ liệu của một file lớn có thể được phân bổ trên nhiều vùng để tận dụng khả năng song song hóa.
+
+>Các file và thư mục trong XFS có thể trải dài qua nhiều AG khác nhau, nghĩa là dữ liệu của một file lớn có thể được phân bổ trên nhiều vùng để tận dụng khả năng song song hóa.
 
 **VD:**
 
