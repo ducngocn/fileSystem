@@ -1,0 +1,1 @@
+1. kích thước của các nhánh có phải bằng nhau không 

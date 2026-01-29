@@ -5,6 +5,8 @@
 - [Demo Resize volume](#resize-volume)
 
 - [Demo Di chuyển data từ PV này sang PV khác](#di-chuyển-dữ-liệu-từ-pv-này-sang-pv-khác-và-xoá-pv-mà-không-bị-downtime)
+
+- [Giảm kích thước LV](#giảm-kích-thước-của-lv)
 ### Flexible capacity  
 
 #### Tạo pv từ phân vùng/ổ
@@ -403,7 +405,7 @@ root@linuxfilesystem:~# lvextend -L +30M /dev/vg_test/lv_test
 - **Cú pháp** 
 
 ```
-resize2fs <đường dẫn tới pv> <kích thước mở rộng>
+resize2fs <đường dẫn tới lv> <kích thước mở rộng>
 ```
 Trong trường hợp muốn mở rộng hết dung lượng còn lại thì không thêm trường <kích thước mở rộng>
 
@@ -513,3 +515,157 @@ root@linuxfilesystem:~# vgs
   vg_test   3   1   0 wz--n- <1.11g <1.01g
 ```
   
+### Giảm kích thước của LV 
+
+**resize offline** có nghĩa là umount, sau đó dùng lệnh để thay đổi kích thước chứ không xoá phân vùng đó để tạo lại.
+
+VD: resize phân vùng format ext4 thì sẽ phải umount, sau đó giảm kích thước filesystem đi tức là vùng mà filesystem đó quản lý, sau đó mới giảm kích thước của phân vùng đó đi.
+
+Trong trường hợp của xfs, không hỗ trợ resize kể cả online hay offline, muốn giảm thì sẽ phải umount, backup, xoá phân vùng, tạo phân vùng mới có kích thước nhỏ hơn, format lại sau đó khôi phục.
+
+Mấu chốt của resize offline là không xoá phân vùng.
+
+**resize online** có nghĩa là thay đổi trực tiếp kích thước của filesystem và phân vùng mà không phải umount.
+
+
+**Đối với LVM:**
+
+- Có thể giảm kích thước của LV 
+
+- Cú pháp giảm bao nhiêu dung lượng:
+
+```
+lvreduce --resizefs -L -<kích thước> tênvg/tênlv
+lvreduce --resizefs -L -64M vg_test/lv_test
+```
+
+- Cú pháp giảm tới bao nhiêu (bỏ dấu '-' trước kích thước):
+
+```
+lvreduce --resizefs -L <kích thước> tênvg/tênlv
+lvreduce --resizefs -L 80M vg_test/lv_test
+```
+>option --resizef: option này sẽ thay đổi kích thước của filesystem được format vào LV. 
+
+
+**Trường hợp 1:** Giảm kích thước của lv khi chưa format fs và chưa có dữ liệu   
+- Trường hợp này không cần option ``--resizefs`` vì nó chưa format filesystem
+
+```bash
+root@linuxfilesystem:~# lvs
+  LV      VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_test vg_test -wi-a----- 84.00m
+```
+
+```bash
+root@linuxfilesystem:~# lvreduce -L -4M /dev/vg_test/lv_test
+  WARNING: Reducing active logical volume to 80.00 MiB.
+  THIS MAY DESTROY YOUR DATA (filesystem etc.)
+Do you really want to reduce vg_test/lv_test? [y/n]: y
+  Size of logical volume vg_test/lv_test changed from 84.00 MiB (21 extents) to 80.00 MiB (20 extents).
+  Logical volume vg_test/lv_test successfully resized.
+```
+
+**Trường hợp 2:** giảm kích thước của lv khi format nhưng chưa mount 
+
+- Đã format ext4.
+
+```bash
+root@linuxfilesystem:~# lvs
+  LV      VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_test vg_test -wi-a----- 84.00m
+```
+
+```bash
+root@linuxfilesystem:~# lvreduce --resizefs -L -4M vg_test/lv_test
+fsck from util-linux 2.37.2
+/dev/mapper/vg_test-lv_test contains a file system with errors, check forced.
+/dev/mapper/vg_test-lv_test: 11/18944 files (0.0% non-contiguous), 5308/21504 blocks
+resize2fs 1.46.5 (30-Dec-2021)
+Resizing the filesystem on /dev/mapper/vg_test-lv_test to 20480 (4k) blocks.
+The filesystem on /dev/mapper/vg_test-lv_test is now 20480 (4k) blocks long.
+
+  Size of logical volume vg_test/lv_test changed from 84.00 MiB (21 extents) to 80.00 MiB (20 extents).
+  Logical volume vg_test/lv_test successfully resized.
+```
+
+- Trường hợp format với xfs
+
+```bash
+root@linuxfilesystem:~# lvreduce --resizefs -L -4M vg_test/lv_test
+Phase 1 - find and verify superblock...
+Phase 2 - using internal log
+        - zero log...
+        - scan filesystem freespace and inode maps...
+        - found root inode chunk
+Phase 3 - for each AG...
+        - scan (but don't clear) agi unlinked lists...
+        - process known inodes and perform inode discovery...
+        - agno = 0
+        - agno = 1
+        - agno = 2
+        - agno = 3
+        - process newly discovered inodes...
+Phase 4 - check for duplicate blocks...
+        - setting up duplicate extent list...
+        - check for inodes claiming duplicate blocks...
+        - agno = 0
+        - agno = 1
+        - agno = 2
+        - agno = 3
+No modify flag set, skipping phase 5
+Phase 6 - check inode connectivity...
+        - traversing filesystem ...
+        - traversal finished ...
+        - moving disconnected inodes to lost+found ...
+Phase 7 - verify link counts...
+No modify flag set, skipping filesystem flush and exiting.
+fsadm: Xfs filesystem shrinking is unsupported.
+  /sbin/fsadm failed: 1
+  Filesystem resize failed.     <---failed
+```
+
+- Đối với xfs thì fail bởi vì nó không hỗ  trợ giảm, nếu muốn thì phải làm thủ công backup, umount, xoá, tạo mới xfs sau đó khôi phục.
+
+⇒ Việc giảm kích thước có thành công hay không sau khi đã format còn phụ thuộc vào loại filesystem.
+
+
+**Trường hợp 3:** giảm kích thước của lv khi format và  mount 
+
+- Đã format lv_test filesystem ext4 và mount vào /mnt/mount_point, ban đầu có size là 80M
+
+- Giảm đi 20M
+
+```bash
+root@linuxfilesystem:~# lvreduce --resizefs -L -20M vg_test/lv_test
+Do you want to unmount "/mnt/mount_point" ? [Y|n] y   ⬅️ yêu cầu umount
+fsck from util-linux 2.37.2
+/dev/mapper/vg_test-lv_test: 11/20480 files (9.1% non-contiguous), 2323/20480 blocks
+resize2fs 1.46.5 (30-Dec-2021)
+Resizing the filesystem on /dev/mapper/vg_test-lv_test to 15360 (4k) blocks.
+The filesystem on /dev/mapper/vg_test-lv_test is now 15360 (4k) blocks long.
+
+  Size of logical volume vg_test/lv_test changed from 80.00 MiB (20 extents) to 60.00 MiB (15 extents).
+  Logical volume vg_test/lv_test successfully resized.
+```
+- Trường hợp này sẽ yêu cầu umount.
+- Sau khi giảm kích thước xong:
+
+```
+root@linuxfilesystem:~# lvs
+  LV      VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_test vg_test -wi-ao---- 60.00m
+```
+
+Có thể dùng lệnh này để xem đang ở chế độ linear hay striped
+
+```
+lvs -o lv_name,vg_name,seg_type 
+```
+
+-	Có thể cân bằng dữ liệu trên nhiều ổ vật lý được không
+-	Tại sao khi tạo lv mặc dù chưa có dữ liệu nào mà khi chạy pvs mà nó vẫn bị chiếm dung lượng
+
+```
+dd if=/dev/zero of=/mnt/mount_point/file40M bs=1M count=40
+```

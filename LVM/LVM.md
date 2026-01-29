@@ -208,3 +208,5 @@ Việc này giúp bảo trì, thay thế, hoặc tái phân bố dữ liệu m�
 - Khi tất cả PE đã được di chuyển thành công (100%), LVM gỡ bỏ mirror gốc.
 
 - Dữ liệu LV giờ chỉ nằm trên PV đích, PV nguồn trống hoàn toàn.
+
+
