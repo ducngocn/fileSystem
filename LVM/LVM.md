@@ -160,7 +160,7 @@
 
 #### Di chuyển dữ liệu từ PV này sang PV khác không bị downtime
 
->Là cơ chế khác biệt lớn giữa LVM và phân vùng truyền thống.
+- Là cơ chế khác biệt lớn giữa LVM và phân vùng truyền thống.
 
 **Mục đích:**
 - Di chuyển dữ liệu của các Logical Volume (LV) từ một Physical Volume (PV) sang một PV khác trong cùng Volume Group (VG) mà không cần ngắt dịch vụ hoặc downtime.
