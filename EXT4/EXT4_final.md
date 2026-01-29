@@ -384,21 +384,21 @@ File size of /mnt/par/file_new is 14 (1 block of 4096 bytes)
 
 **Phân mảnh**
 
-```
+
 Phân mảnh (fragmentation) trong lưu trữ là hiện tượng một file hoặc dữ liệu không được ghi vào một vùng nhớ liên tục, mà bị chia nhỏ và phân tán vào nhiều vị trí khác nhau trên ổ đĩa hoặc bộ nhớ.
-```
+
 
 **Phân mảnh trong**
 
-```
+
 Phân mảnh bên trong xảy ra khi bộ nhớ được chia thành các khối có kích thước cố định. Mỗi khi một tiến trình (method) yêu cầu cấp phát bộ nhớ, thì một khối có kích thước cố định sẽ được cấp cho tiến trình đó. Trong trường hợp dung lượng của khối cấp phát lớn hơn dung lượng mà tiến trình thực sự cần, thì phần chênh lệch giữa bộ nhớ được cấp phát và bộ nhớ yêu cầu được gọi là phân mảnh bên trong. Chúng ta cố định kích thước của các khối bộ nhớ, và điều đó gây ra vấn đề này. Nếu dùng kỹ thuật phân vùng động để cấp phát không gian cho tiến trình, thì vấn đề này có thể được giải quyết.
-```
+
 
 **Phân mảnh ngoài** 
 
-```
+
 Phân mảnh ngoài xảy ra khi tổng dung lượng bộ nhớ trống đủ để cấp cho tiến trình, nhưng các khoảng trống đó bị chia nhỏ, rải rác, không liền kề nhau. Vì tiến trình thường cần một vùng liên tục, hệ điều hành không cấp phát được.
-```
+
 
 
 
